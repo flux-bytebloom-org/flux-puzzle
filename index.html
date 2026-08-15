@@ -341,6 +341,14 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow
 .lb-table td.name { color: var(--white); font-weight: 500; }
 .lb-table td.rank { color: var(--amber); font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 1.1rem; }
 .lb-empty { color: var(--text-muted); font-size: 0.88rem; padding: 1rem 0; }
+.lb-table tr.flagged td { opacity: 0.55; }
+.lb-table tr.flagged td.name::after {
+  content: ' \1F6A9 cheater';
+  color: #ff6b6b;
+  font-size: 0.72rem;
+  font-weight: 500;
+  opacity: 1;
+}
 
 footer {
   background: var(--deep3);
@@ -441,6 +449,10 @@ footer p { color: var(--text-muted); font-size: 0.8rem; }
 
   const LB_COLLECTION = "flux_puzzle_scores";
 
+  // Minimum possible moves to solve the FIXED_BOARD below (computed via BFS).
+  // Any score below this is mathematically impossible => auto-flagged as suspicious.
+  const MIN_POSSIBLE_STEPS = 20;
+
   function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
   function formatTime(sec) {
     sec = Math.max(0, Math.floor(sec));
@@ -450,8 +462,9 @@ footer p { color: var(--text-muted); font-size: 0.8rem; }
 
   async function saveScore(name, steps, seconds) {
     try {
+      const flagged = steps < MIN_POSSIBLE_STEPS;
       await addDoc(collection(db, LB_COLLECTION), {
-        name, steps, seconds, createdAt: serverTimestamp()
+        name, steps, seconds, flagged, createdAt: serverTimestamp()
       });
       loadLeaderboard();
     } catch (e) {
@@ -462,7 +475,7 @@ footer p { color: var(--text-muted); font-size: 0.8rem; }
   async function loadLeaderboard() {
     const el = document.getElementById('lbContent');
     try {
-      const q = query(collection(db, LB_COLLECTION), orderBy('steps', 'asc'), orderBy('seconds', 'asc'), limit(10));
+      const q = query(collection(db, LB_COLLECTION), orderBy('steps', 'asc'), orderBy('seconds', 'asc'), limit(20));
       const snap = await getDocs(q);
       if (snap.empty) {
         el.innerHTML = `<div class="lb-empty">No scores yet. Be the first to solve it!</div>`;
@@ -472,7 +485,10 @@ footer p { color: var(--text-muted); font-size: 0.8rem; }
       let i = 1;
       snap.forEach(doc => {
         const d = doc.data();
-        rows += `<tr>
+        // Belt-and-suspenders: flag it even if the stored doc predates the flag field
+        // or was written directly to Firestore bypassing the client.
+        const isFlagged = d.flagged === true || (typeof d.steps === 'number' && d.steps < MIN_POSSIBLE_STEPS);
+        rows += `<tr class="${isFlagged ? 'flagged' : ''}">
           <td class="rank">#${i}</td>
           <td class="name">${escapeHtml(d.name || '—')}</td>
           <td>${d.steps}</td>
