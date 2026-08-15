@@ -223,33 +223,6 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow
   box-shadow: none;
 }
 
-#stats { background: var(--deep2); padding-top: 2.2rem; padding-bottom: 2.2rem; display: none; }
-.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-.stat-card {
-  background: rgba(142,202,230,0.04);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 1.2rem 1rem;
-  text-align: center;
-  transition: border-color var(--transition), transform var(--transition);
-}
-.stat-card:hover { border-color: var(--border-hover); transform: translateY(-3px); }
-.stat-num {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 1.7rem;
-  font-weight: 700;
-  color: var(--amber);
-  line-height: 1.1;
-  word-break: break-word;
-}
-.stat-label {
-  font-size: 0.65rem;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  color: var(--text-muted);
-  margin-top: 0.45rem;
-}
-
 #game { background: var(--deep); display: none; }
 .game-shell {
   border: 1px solid var(--border);
@@ -380,7 +353,6 @@ footer {
 footer p { color: var(--text-muted); font-size: 0.8rem; }
 
 @media (max-width: 480px) {
-  .stat-row { grid-template-columns: 1fr 1fr; }
   .tile-face { font-size: 1.5rem; }
   .name-form input { width: 100%; }
 }
@@ -404,12 +376,6 @@ footer p { color: var(--text-muted); font-size: 0.8rem; }
       <input type="text" id="playerName" placeholder="Enter your name..." maxlength="24">
       <button id="btnStart">Start Game</button>
     </div>
-  </div>
-</section>
-
-<section id="stats">
-  <div class="section-inner">
-    <div class="stat-row" id="statRow"></div>
   </div>
 </section>
 
@@ -696,14 +662,7 @@ document.getElementById('btnStart').addEventListener('click', () => {
     return;
   }
   playerName = val;
-  document.getElementById('stats').style.display = 'block';
   document.getElementById('game').style.display = 'block';
-  document.getElementById('statRow').innerHTML = `
-    <div class="stat-card"><div class="stat-num">${escapeHtml(playerName)}</div><div class="stat-label">Player</div></div>
-    <div class="stat-card"><div class="stat-num">Single</div><div class="stat-label">Puzzle</div></div>
-    <div class="stat-card"><div class="stat-num">3×3</div><div class="stat-label">Board</div></div>
-    <div class="stat-card"><div class="stat-num">Fixed</div><div class="stat-label">Type</div></div>
-  `;
   buildBoardDom();
   loadFixedPuzzle();
   document.getElementById('game').scrollIntoView({behavior:'smooth'});
