@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sliding Puzzle</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --sky: #8ecae6;
+  --blue-green: #219ebc;
+  --deep: #023047;
+  --deep2: #021e2c;
+  --deep3: #010f17;
+  --amber: #ffb703;
+  --orange: #fb8500;
+  --white: #f8fbff;
+  --text-light: #cde8f5;
+  --text-muted: rgba(205, 232, 245, 0.5);
+  --border: rgba(142, 202, 230, 0.14);
+  --border-hover: rgba(255, 183, 3, 0.4);
+  --radius: 12px;
+  --transition: 0.25s ease;
+  --max-w: 980px;
+}
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; font-size: 16px; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+body {
+  font-family: 'Outfit', sans-serif;
+  background-color: var(--deep);
+  color: var(--white);
+  line-height: 1.7;
+  overflow-x: hidden;
+}
+a { text-decoration: none; color: inherit; }
+ul { list-style: none; }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 3px; }
+
+body::before {
+  content: '';
+  position: fixed;
+  top: -150px; right: -150px;
+  width: 550px; height: 550px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(33,158,188,0.13) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+body::after {
+  content: '';
+  position: fixed;
+  bottom: -100px; left: -100px;
+  width: 400px; height: 400px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(255,183,3,0.06) 0%, transparent 70%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+header {
+  position: sticky;
+  top: 0;
+  z-index: 200;
+  background: rgba(2, 48, 71, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 clamp(1.5rem, 5vw, 4rem);
+  height: 64px;
+}
+.logo-brand { display: flex; align-items: center; gap: 0.85rem; }
+.mini-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 5px);
+  grid-template-rows: repeat(3, 5px);
+  gap: 2px;
+}
+.mini-grid span { background: var(--blue-green); border-radius: 1px; }
+.mini-grid span:nth-child(5) { background: var(--amber); }
+header h1 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--amber);
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+section {
+  padding: clamp(2.5rem, 6vw, 4.5rem) clamp(1.5rem, 5vw, 4rem);
+  position: relative;
+  z-index: 1;
+}
+.section-inner { max-width: var(--max-w); margin: 0 auto; }
+
+section h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(1.7rem, 3.5vw, 2.2rem);
+  font-weight: 700;
+  color: var(--white);
+  margin-bottom: 0.4rem;
+  display: inline-block;
+}
+section h2::after {
+  content: '';
+  display: block;
+  width: 44px; height: 3px;
+  background: var(--amber);
+  border-radius: 2px;
+  margin-top: 0.5rem;
+  margin-bottom: 1.6rem;
+}
+
+#hero {
+  min-height: 56vh;
+  display: flex;
+  align-items: center;
+  padding-top: 3rem;
+  padding-bottom: 2rem;
+}
+.hero-inner { max-width: 540px; margin: 0 auto; text-align: center; }
+.hero-inner .tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.72rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--blue-green);
+  border: 1px solid rgba(33,158,188,0.4);
+  padding: 0.4rem 1rem;
+  border-radius: 100px;
+  margin-bottom: 1.6rem;
+}
+.hero-inner .tag::before {
+  content: '';
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--blue-green);
+  animation: pulse 2s infinite;
+}
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(1.4); }
+}
+.hero-inner h2 {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: clamp(2.1rem, 5vw, 3rem);
+  font-weight: 700;
+  line-height: 1.2;
+  color: var(--white);
+  margin-bottom: 1rem;
+}
+.hero-inner h2 span { color: var(--amber); }
+.hero-inner h2::after { display: none; }
+.hero-inner p {
+  font-size: 1rem;
+  color: var(--text-light);
+  margin-bottom: 1.9rem;
+  font-weight: 300;
+}
+.name-form {
+  display: flex;
+  gap: 0.7rem;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+.name-form input {
+  background: rgba(142,202,230,0.06);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--white);
+  padding: 0.85rem 1.1rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.95rem;
+  width: 240px;
+  transition: border-color var(--transition);
+}
+.name-form input:focus { outline: none; border-color: var(--border-hover); }
+.name-form input::placeholder { color: var(--text-muted); }
+
+button, .btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--amber);
+  color: var(--deep);
+  border: none;
+  padding: 0.85rem 1.8rem;
+  font-family: 'Outfit', sans-serif;
+  font-size: 0.82rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: background var(--transition), transform var(--transition), box-shadow var(--transition);
+}
+button:hover, .btn:hover {
+  background: var(--orange);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(255,183,3,0.25);
+}
+button:active { transform: translateY(0); }
+button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow: none; }
+.btn-outline {
+  background: transparent;
+  color: var(--amber);
+  border: 1px solid rgba(255,183,3,0.45);
+}
+.btn-outline:hover {
+  background: rgba(255,183,3,0.1);
+  color: var(--amber);
+  box-shadow: none;
+}
+
+#stats { background: var(--deep2); padding-top: 2.2rem; padding-bottom: 2.2rem; display: none; }
+.stat-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+.stat-card {
+  background: rgba(142,202,230,0.04);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1.2rem 1rem;
+  text-align: center;
+  transition: border-color var(--transition), transform var(--transition);
+}
+.stat-card:hover { border-color: var(--border-hover); transform: translateY(-3px); }
+.stat-num {
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: var(--amber);
+  line-height: 1.1;
+  word-break: break-word;
+}
+.stat-label {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--text-muted);
+  margin-top: 0.45rem;
+}
+
+#game { background: var(--deep); display: none; }
+.game-shell {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: rgba(1,15,23,0.6);
+  max-width: 420px;
+  margin: 0 auto;
+}
+.game-toolbar {
+  display: flex;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(2,30,44,0.8);
+}
+.game-toolbar button { padding: 0.55rem 1rem; font-size: 0.7rem; }
+
+.board-wrap {
+  padding: 1.4rem;
+  background: radial-gradient(ellipse at 30% 20%, rgba(33,158,188,0.08) 0%, transparent 55%), #010f17;
+}
+.board {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 8px;
+}
+.tile {
+  position: absolute;
+  width: 33.3333%;
+  height: 33.3333%;
+  padding: 4px;
+  box-sizing: border-box;
+  transition: transform 0.16s cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+}
+.tile-face {
+  width: 100%;
+  height: 100%;
+  border-radius: 8px;
+  background: linear-gradient(145deg, #10384f, #0a2536);
+  border: 1px solid rgba(142,202,230,0.2);
+  box-shadow: 0 3px 10px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.03);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Cormorant Garamond', serif;
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--white);
+  cursor: pointer;
+  user-select: none;
+  transition: border-color 0.15s ease, transform 0.1s ease, background 0.3s ease, color 0.3s ease;
+}
+.tile-face:hover { border-color: var(--border-hover); transform: scale(0.96); }
+.tile.solved .tile-face {
+  background: linear-gradient(145deg, #1a4a63, #0e2e40);
+  border-color: rgba(255,183,3,0.5);
+  color: var(--amber);
+}
+
+.game-status {
+  padding: 0.9rem 1.2rem;
+  border-top: 1px solid var(--border);
+  font-family: 'Outfit', monospace;
+  font-size: 0.83rem;
+  min-height: 44px;
+  color: var(--text-light);
+  background: rgba(2,30,44,0.7);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+.game-status .ok { color: var(--blue-green); font-weight: 600; }
+.game-status .win { color: var(--amber); font-weight: 600; }
+
+#win-card { display: none; margin-top: 2rem; }
+.win-summary {
+  display: flex;
+  gap: 0.7rem;
+  flex-wrap: wrap;
+  margin-bottom: 1.3rem;
+}
+.win-summary .chip {
+  background: rgba(33,158,188,0.14);
+  border: 1px solid var(--border);
+  color: var(--text-light);
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.83rem;
+}
+.win-summary .chip b { color: var(--amber); }
+
+.graph-shell {
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: rgba(1,15,23,0.6);
+}
+svg#pathGraph {
+  display: block;
+  width: 100%;
+  height: auto;
+  background: radial-gradient(ellipse at 30% 20%, rgba(33,158,188,0.08) 0%, transparent 55%), #010f17;
+}
+.pnode { fill: var(--blue-green); stroke: #021e2c; stroke-width: 1.4px; }
+.pnode.endpoint { fill: var(--orange); stroke: var(--white); stroke-width: 2px; }
+.plink { stroke: rgba(255,183,3,0.55); stroke-width: 1.6px; }
+.plabel { font-family: 'Outfit', sans-serif; font-size: 10px; fill: var(--text-muted); }
+
+#leaderboard { background: var(--deep2); }
+.lb-note { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.3rem; font-weight: 300; }
+.lb-table { width: 100%; border-collapse: collapse; }
+.lb-table th {
+  text-align: left;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--text-muted);
+  padding: 0.6rem 0.8rem;
+  border-bottom: 1px solid var(--border);
+}
+.lb-table td {
+  padding: 0.7rem 0.8rem;
+  font-size: 0.88rem;
+  color: var(--text-light);
+  border-bottom: 1px solid var(--border);
+  font-weight: 300;
+}
+.lb-table td.name { color: var(--white); font-weight: 500; }
+.lb-table td.rank { color: var(--amber); font-family: 'Cormorant Garamond', serif; font-weight: 700; font-size: 1.1rem; }
+.lb-empty { color: var(--text-muted); font-size: 0.88rem; padding: 1rem 0; }
+
+footer {
+  background: var(--deep3);
+  text-align: center;
+  padding: 2rem;
+  border-top: 1px solid var(--border);
+  position: relative;
+  z-index: 1;
+}
+footer p { color: var(--text-muted); font-size: 0.8rem; }
+
+@media (max-width: 480px) {
+  .stat-row { grid-template-columns: 1fr 1fr; }
+  .tile-face { font-size: 1.5rem; }
+  .name-form input { width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo-brand">
+    <div class="mini-grid"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+    <h1>Flux — Sliding Puzzle</h1>
+  </div>
+</header>
+
+<section id="hero">
+  <div class="hero-inner">
+    <div class="tag">Classic 3×3 · Medium difficulty</div>
+    <h2>Slide the tiles… <span>in the fewest moves</span></h2>
+    <p>Enter your name and start. Every move counts. Once you solve it, you'll see your solve path as a graph, and your rank on the leaderboard.</p>
+    <div class="name-form">
+      <input type="text" id="playerName" placeholder="Enter your name..." maxlength="24">
+      <button id="btnStart">Start Game</button>
+    </div>
+  </div>
+</section>
+
+<section id="stats">
+  <div class="section-inner">
+    <div class="stat-row" id="statRow"></div>
+  </div>
+</section>
+
+<section id="game">
+  <div class="section-inner">
+    <h2>The Puzzle</h2>
+    <div class="game-shell">
+      <div class="game-toolbar">
+        <button id="btnNew">New Puzzle</button>
+        <button class="btn-outline" id="btnRestart">Restart Same Puzzle</button>
+      </div>
+      <div class="board-wrap">
+        <div class="board" id="board"></div>
+      </div>
+      <div class="game-status">
+        <span id="statusText">Move a tile next to the empty slot...</span>
+        <span>Steps: <b class="win" id="stepCount">0</b> &nbsp;·&nbsp; Time: <b class="win" id="timeCount">0:00</b></span>
+      </div>
+    </div>
+
+    <div id="win-card">
+      <h2 style="font-size:1.4rem;">🎉 Solved!</h2>
+      <div class="win-summary" id="winSummary"></div>
+      <div class="graph-shell">
+        <svg id="pathGraph" viewBox="0 0 900 260"></svg>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="leaderboard">
+  <div class="section-inner">
+    <h2>Leaderboard</h2>
+    <p class="lb-note">Ranked by fewest steps, then fastest time</p>
+    <div id="lbContent"><div class="lb-empty">Loading...</div></div>
+  </div>
+</section>
+
+<footer>
+  <p>Flux Looks So Good On Us</p>
+</footer>
+
+<!-- ============================================================
+     FIREBASE — replace firebaseConfig below with your project's values
+     ============================================================ -->
+<script type="module">
+  // Modular Firebase SDK (v12) — matches the snippet from the Firebase console
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-app.js";
+  import { getAnalytics } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-analytics.js";
+  import {
+    getFirestore, collection, addDoc, query, orderBy, limit, getDocs, serverTimestamp
+  } from "https://www.gstatic.com/firebasejs/12.17.1/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAHkV6nioJ0ELPBNidFfY2ovIQVJIlEkN0",
+    authDomain: "flux-puzzle.firebaseapp.com",
+    projectId: "flux-puzzle",
+    storageBucket: "flux-puzzle.firebasestorage.app",
+    messagingSenderId: "977687883220",
+    appId: "1:977687883220:web:c6576959b04542ee2c7a41",
+    measurementId: "G-YPQX00YJ44"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+  try { getAnalytics(app); } catch (eA) { /* analytics is optional, safe to ignore if blocked */ }
+
+  const LB_COLLECTION = "flux_puzzle_scores";
+
+  function escapeHtml(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function formatTime(sec) {
+    sec = Math.max(0, Math.floor(sec));
+    const m = Math.floor(sec/60), s = sec%60;
+    return `${m}:${s.toString().padStart(2,'0')}`;
+  }
+
+  async function saveScore(name, steps, seconds) {
+    try {
+      await addDoc(collection(db, LB_COLLECTION), {
+        name, steps, seconds, createdAt: serverTimestamp()
+      });
+      loadLeaderboard();
+    } catch (e) {
+      console.warn("Could not save score:", e);
+    }
+  }
+
+  async function loadLeaderboard() {
+    const el = document.getElementById('lbContent');
+    try {
+      const q = query(collection(db, LB_COLLECTION), orderBy('steps', 'asc'), orderBy('seconds', 'asc'), limit(10));
+      const snap = await getDocs(q);
+      if (snap.empty) {
+        el.innerHTML = `<div class="lb-empty">No scores yet. Be the first to solve it!</div>`;
+        return;
+      }
+      let rows = '';
+      let i = 1;
+      snap.forEach(doc => {
+        const d = doc.data();
+        rows += `<tr>
+          <td class="rank">#${i}</td>
+          <td class="name">${escapeHtml(d.name || '—')}</td>
+          <td>${d.steps}</td>
+          <td>${formatTime(d.seconds)}</td>
+        </tr>`;
+        i++;
+      });
+      el.innerHTML = `<table class="lb-table">
+        <thead><tr><th>#</th><th>Name</th><th>Steps</th><th>Time</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    } catch (e) {
+      el.innerHTML = `<div class="lb-empty">Could not load the leaderboard. Check your Firestore rules.</div>`;
+      console.warn(e);
+    }
+  }
+
+  // expose to the classic (non-module) puzzle script below
+  window.saveScore = saveScore;
+  window.escapeHtml = escapeHtml;
+  window.formatTime = formatTime;
+
+  loadLeaderboard();
+</script>
+
+<script>
+// ============================ PUZZLE LOGIC ============================
+const SIZE = 3;
+const TARGET = [0,1,2,3,4,5,6,7,8]; // blank (0) top-left
+const SHUFFLE_MOVES = 32; // medium difficulty
+
+let board = [];
+let blankIdx = 0;
+let playerName = '';
+let stepCount = 0;
+let startTime = null;
+let timerInterval = null;
+let solved = false;
+let movePath = [];
+const tileEls = {}; // value(1-8) -> DOM element
+
+function idxToRC(i) { return [Math.floor(i/SIZE), i%SIZE]; }
+function rcToIdx(r,c) { return r*SIZE+c; }
+function neighbors(i) {
+  const [r,c] = idxToRC(i);
+  const out = [];
+  if (r>0) out.push(rcToIdx(r-1,c));
+  if (r<SIZE-1) out.push(rcToIdx(r+1,c));
+  if (c>0) out.push(rcToIdx(r,c-1));
+  if (c<SIZE-1) out.push(rcToIdx(r,c+1));
+  return out;
+}
+
+function buildBoardDom() {
+  const el = document.getElementById('board');
+  el.innerHTML = '';
+  for (let v=1; v<=8; v++) {
+    const tile = document.createElement('div');
+    tile.className = 'tile';
+    tile.innerHTML = `<div class="tile-face">${v}</div>`;
+    tile.querySelector('.tile-face').addEventListener('click', () => tryMoveValue(v));
+    el.appendChild(tile);
+    tileEls[v] = tile;
+  }
+}
+
+function newPuzzle() {
+  board = TARGET.slice();
+  blankIdx = board.indexOf(0);
+  let lastMove = -1;
+  for (let i=0; i<SHUFFLE_MOVES; i++) {
+    const opts = neighbors(blankIdx).filter(n => n !== lastMove);
+    const pick = opts[Math.floor(Math.random()*opts.length)];
+    [board[blankIdx], board[pick]] = [board[pick], board[blankIdx]];
+    lastMove = blankIdx;
+    blankIdx = pick;
+  }
+  resetState();
+}
+
+function restartSamePuzzle() {
+  board = movePath[0].slice();
+  blankIdx = board.indexOf(0);
+  resetState();
+}
+
+function resetState() {
+  stepCount = 0;
+  solved = false;
+  movePath = [board.slice()];
+  startTime = null;
+  clearInterval(timerInterval);
+  document.getElementById('timeCount').textContent = '0:00';
+  document.getElementById('stepCount').textContent = '0';
+  document.getElementById('statusText').textContent = 'Move a tile next to the empty slot...';
+  document.getElementById('win-card').style.display = 'none';
+  positionTiles(false);
+}
+
+function positionTiles(animate) {
+  board.forEach((val, i) => {
+    if (val === 0) return;
+    const [r,c] = idxToRC(i);
+    const el = tileEls[val];
+    if (!animate) el.style.transition = 'none';
+    el.style.transform = `translate(${c*100}%, ${r*100}%)`;
+    el.classList.toggle('solved', solved);
+    if (!animate) requestAnimationFrame(() => { el.style.transition = ''; });
+  });
+}
+
+function tryMoveValue(val) {
+  const i = board.indexOf(val);
+  tryMove(i);
+}
+
+function tryMove(i) {
+  if (solved) return;
+  if (!neighbors(blankIdx).includes(i)) return;
+  if (startTime === null) {
+    startTime = Date.now();
+    timerInterval = setInterval(updateTimer, 1000);
+  }
+  [board[blankIdx], board[i]] = [board[i], board[blankIdx]];
+  blankIdx = i;
+  stepCount++;
+  movePath.push(board.slice());
+  document.getElementById('stepCount').textContent = stepCount;
+  positionTiles(true);
+  checkWin();
+}
+
+function updateTimer() {
+  if (startTime === null) return;
+  const sec = Math.floor((Date.now()-startTime)/1000);
+  document.getElementById('timeCount').textContent = formatTime(sec);
+}
+
+function checkWin() {
+  if (board.every((v,i) => v===TARGET[i])) {
+    solved = true;
+    clearInterval(timerInterval);
+    const totalSec = startTime ? Math.floor((Date.now()-startTime)/1000) : 0;
+    document.getElementById('statusText').innerHTML = `<span class="win">✓ Solved!</span>`;
+    positionTiles(true);
+    showWin(totalSec);
+    saveScore(playerName, stepCount, totalSec);
+  }
+}
+
+function showWin(totalSec) {
+  const card = document.getElementById('win-card');
+  card.style.display = 'block';
+  document.getElementById('winSummary').innerHTML = `
+    <span class="chip">Player: <b>${escapeHtml(playerName)}</b></span>
+    <span class="chip">Steps: <b>${stepCount}</b></span>
+    <span class="chip">Time: <b>${formatTime(totalSec)}</b></span>
+  `;
+  drawPathGraph();
+  card.scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// draws a compact node-link path of the moves the player actually made
+function drawPathGraph() {
+  const svg = document.getElementById('pathGraph');
+  svg.innerHTML = '';
+  const svgNS = "http://www.w3.org/2000/svg";
+  const W = 900, H = 260;
+  const MAX_NODES = 18;
+
+  let seq = movePath.map((_, i) => i);
+  if (seq.length > MAX_NODES) {
+    const sampled = [0];
+    const step = (seq.length-1) / (MAX_NODES-1);
+    for (let k=1; k<MAX_NODES-1; k++) sampled.push(Math.round(k*step));
+    sampled.push(seq.length-1);
+    seq = [...new Set(sampled)];
+  }
+
+  const n = seq.length;
+  const cols = Math.min(n, 9);
+  const rows = Math.ceil(n/cols);
+  const padX = 60, padY = 55;
+  const gapX = (W - padX*2) / Math.max(1, cols-1);
+  const gapY = rows>1 ? (H - padY*2) / (rows-1) : 0;
+
+  const pts = seq.map((stepIdx, k) => {
+    const row = Math.floor(k/cols);
+    const colInRow = k - row*cols;
+    const x = padX + colInRow*gapX;
+    const y = padY + row*gapY;
+    return {x, y, stepIdx};
+  });
+
+  const gLinks = document.createElementNS(svgNS,'g');
+  const gNodes = document.createElementNS(svgNS,'g');
+  svg.appendChild(gLinks);
+  svg.appendChild(gNodes);
+
+  for (let i=0; i<pts.length-1; i++) {
+    const a = pts[i], b = pts[i+1];
+    const line = document.createElementNS(svgNS,'line');
+    line.setAttribute('x1', a.x); line.setAttribute('y1', a.y);
+    line.setAttribute('x2', b.x); line.setAttribute('y2', b.y);
+    line.setAttribute('class', 'plink');
+    gLinks.appendChild(line);
+  }
+
+  pts.forEach((p, i) => {
+    const isEnd = i===0 || i===pts.length-1;
+    const c = document.createElementNS(svgNS,'circle');
+    c.setAttribute('cx', p.x); c.setAttribute('cy', p.y);
+    c.setAttribute('r', isEnd ? 8 : 5.5);
+    c.setAttribute('class', 'pnode' + (isEnd ? ' endpoint' : ''));
+    gNodes.appendChild(c);
+
+    const label = document.createElementNS(svgNS,'text');
+    label.setAttribute('x', p.x);
+    label.setAttribute('y', p.y - (isEnd ? 16 : 12));
+    label.setAttribute('text-anchor', 'middle');
+    label.setAttribute('class', 'plabel');
+    label.textContent = i===0 ? 'Start' : (i===pts.length-1 ? 'Solved!' : p.stepIdx);
+    gNodes.appendChild(label);
+  });
+}
+
+document.getElementById('btnStart').addEventListener('click', () => {
+  const val = document.getElementById('playerName').value.trim();
+  if (!val) {
+    document.getElementById('playerName').focus();
+    return;
+  }
+  playerName = val;
+  document.getElementById('stats').style.display = 'block';
+  document.getElementById('game').style.display = 'block';
+  document.getElementById('statRow').innerHTML = `
+    <div class="stat-card"><div class="stat-num">${escapeHtml(playerName)}</div><div class="stat-label">Player</div></div>
+    <div class="stat-card"><div class="stat-num">Medium</div><div class="stat-label">Difficulty</div></div>
+    <div class="stat-card"><div class="stat-num">3×3</div><div class="stat-label">Board</div></div>
+    <div class="stat-card"><div class="stat-num">${SHUFFLE_MOVES}</div><div class="stat-label">Shuffle Depth</div></div>
+  `;
+  buildBoardDom();
+  newPuzzle();
+  document.getElementById('game').scrollIntoView({behavior:'smooth'});
+});
+document.getElementById('btnNew').addEventListener('click', newPuzzle);
+document.getElementById('btnRestart').addEventListener('click', restartSamePuzzle);
+
+document.addEventListener('keydown', (e) => {
+  if (document.getElementById('game').style.display !== 'block' || solved) return;
+  const [r,c] = idxToRC(blankIdx);
+  let target = null;
+  if (e.key === 'ArrowUp') target = rcToIdx(r+1,c);
+  if (e.key === 'ArrowDown') target = rcToIdx(r-1,c);
+  if (e.key === 'ArrowLeft') target = rcToIdx(r,c+1);
+  if (e.key === 'ArrowRight') target = rcToIdx(r,c-1);
+  if (target !== null && target>=0 && target<9 && neighbors(blankIdx).includes(target)) {
+    tryMove(target);
+  }
+});
+</script>
+</body>
+</html>
