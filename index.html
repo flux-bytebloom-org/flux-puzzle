@@ -397,7 +397,7 @@ footer p { color: var(--text-muted); font-size: 0.8rem; }
 
 <section id="hero">
   <div class="hero-inner">
-    <div class="tag">Classic 3×3 · Medium difficulty</div>
+    <div class="tag">Classic 3×3 · Single Puzzle</div>
     <h2>Slide the tiles… <span>in the fewest moves</span></h2>
     <p>Enter your name and start. Every move counts. Once you solve it, you'll see your steps, your time, and your rank on the leaderboard.</p>
     <div class="name-form">
@@ -418,8 +418,7 @@ footer p { color: var(--text-muted); font-size: 0.8rem; }
     <h2>The Puzzle</h2>
     <div class="game-shell">
       <div class="game-toolbar">
-        <button id="btnNew">New Puzzle</button>
-        <button class="btn-outline" id="btnRestart">Restart Same Puzzle</button>
+        <button id="btnRestart">Restart Puzzle</button>
       </div>
       <div class="board-wrap">
         <div class="board" id="board"></div>
@@ -536,8 +535,11 @@ footer p { color: var(--text-muted); font-size: 0.8rem; }
 <script>
 // ============================ PUZZLE LOGIC ============================
 const SIZE = 3;
-const TARGET = [1,2,3,4,5,6,7,8,0];// blank (0) top-left
-const SHUFFLE_MOVES = 32; // medium difficulty
+const TARGET = [1,2,3,4,5,6,7,8,0];
+
+// ===== FIXED SINGLE PUZZLE =====
+// This is the only puzzle. Change these numbers if you want a different fixed board.
+const FIXED_BOARD = [8,7,3, 2,0,5, 4,6,1];
 
 const STATUS_QUIPS = [
   "Not bad. Keep going.",
@@ -577,7 +579,6 @@ let stepCount = 0;
 let startTime = null;
 let timerInterval = null;
 let solved = false;
-let movePath = [];
 const tileEls = {}; // value(1-8) -> DOM element
 
 function idxToRC(i) { return [Math.floor(i/SIZE), i%SIZE]; }
@@ -605,22 +606,8 @@ function buildBoardDom() {
   }
 }
 
-function newPuzzle() {
-  board = TARGET.slice();
-  blankIdx = board.indexOf(0);
-  let lastMove = -1;
-  for (let i=0; i<SHUFFLE_MOVES; i++) {
-    const opts = neighbors(blankIdx).filter(n => n !== lastMove);
-    const pick = opts[Math.floor(Math.random()*opts.length)];
-    [board[blankIdx], board[pick]] = [board[pick], board[blankIdx]];
-    lastMove = blankIdx;
-    blankIdx = pick;
-  }
-  resetState();
-}
-
-function restartSamePuzzle() {
-  board = movePath[0].slice();
+function loadFixedPuzzle() {
+  board = FIXED_BOARD.slice();
   blankIdx = board.indexOf(0);
   resetState();
 }
@@ -628,7 +615,6 @@ function restartSamePuzzle() {
 function resetState() {
   stepCount = 0;
   solved = false;
-  movePath = [board.slice()];
   startTime = null;
   clearInterval(timerInterval);
   document.getElementById('timeCount').textContent = '0:00';
@@ -662,11 +648,9 @@ function tryMove(i) {
     startTime = Date.now();
     timerInterval = setInterval(updateTimer, 1000);
   }
-  const movedTile = board[i];
   [board[blankIdx], board[i]] = [board[i], board[blankIdx]];
   blankIdx = i;
   stepCount++;
-  movePath.push(board.slice());
   document.getElementById('stepCount').textContent = stepCount;
   if (!solved) {
     document.getElementById('statusText').textContent = randomFrom(STATUS_QUIPS);
@@ -716,16 +700,18 @@ document.getElementById('btnStart').addEventListener('click', () => {
   document.getElementById('game').style.display = 'block';
   document.getElementById('statRow').innerHTML = `
     <div class="stat-card"><div class="stat-num">${escapeHtml(playerName)}</div><div class="stat-label">Player</div></div>
-    <div class="stat-card"><div class="stat-num">Medium</div><div class="stat-label">Difficulty</div></div>
+    <div class="stat-card"><div class="stat-num">Single</div><div class="stat-label">Puzzle</div></div>
     <div class="stat-card"><div class="stat-num">3×3</div><div class="stat-label">Board</div></div>
-    <div class="stat-card"><div class="stat-num">${SHUFFLE_MOVES}</div><div class="stat-label">Shuffle Depth</div></div>
+    <div class="stat-card"><div class="stat-num">Fixed</div><div class="stat-label">Type</div></div>
   `;
   buildBoardDom();
-  newPuzzle();
+  loadFixedPuzzle();
   document.getElementById('game').scrollIntoView({behavior:'smooth'});
 });
-document.getElementById('btnNew').addEventListener('click', newPuzzle);
-document.getElementById('btnRestart').addEventListener('click', restartSamePuzzle);
+
+document.getElementById('btnRestart').addEventListener('click', () => {
+  loadFixedPuzzle();
+});
 
 document.addEventListener('keydown', (e) => {
   if (document.getElementById('game').style.display !== 'block' || solved) return;
