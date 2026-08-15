@@ -346,47 +346,6 @@ button:disabled { opacity: 0.4; cursor: not-allowed; transform: none; box-shadow
 }
 .win-summary .chip b { color: var(--amber); }
 
-.steps-list-shell {
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  overflow: hidden;
-  background: rgba(1,15,23,0.6);
-}
-.steps-list-header {
-  padding: 0.8rem 1.1rem;
-  font-size: 0.72rem;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--border);
-  background: rgba(2,30,44,0.7);
-}
-.steps-list {
-  max-height: 220px;
-  overflow-y: auto;
-  padding: 0.4rem 0;
-}
-.step-row {
-  display: flex;
-  align-items: center;
-  gap: 0.7rem;
-  padding: 0.5rem 1.1rem;
-  font-size: 0.85rem;
-  color: var(--text-light);
-  border-bottom: 1px solid rgba(142,202,230,0.06);
-}
-.step-row:last-child { border-bottom: none; }
-.step-num {
-  color: var(--amber);
-  font-family: 'Cormorant Garamond', serif;
-  font-weight: 700;
-  min-width: 2.4rem;
-}
-.step-tile {
-  color: var(--white);
-  font-weight: 500;
-}
-
 #leaderboard { background: var(--deep2); }
 .lb-note { color: var(--text-muted); font-size: 0.85rem; margin-bottom: 1.3rem; font-weight: 300; }
 .lb-table { width: 100%; border-collapse: collapse; }
@@ -432,7 +391,7 @@ footer p { color: var(--text-muted); font-size: 0.8rem; }
 <header>
   <div class="logo-brand">
     <div class="mini-grid"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
-    <h1>Sliding Puzzle</h1>
+    <h1>Flux — Sliding Puzzle</h1>
   </div>
 </header>
 
@@ -474,10 +433,6 @@ footer p { color: var(--text-muted); font-size: 0.8rem; }
     <div id="win-card">
       <h2 style="font-size:1.4rem;">🎉 Solved!</h2>
       <div class="win-summary" id="winSummary"></div>
-      <div class="steps-list-shell">
-        <div class="steps-list-header">Your moves</div>
-        <div class="steps-list" id="stepsList"></div>
-      </div>
     </div>
   </div>
 </section>
@@ -623,7 +578,6 @@ let startTime = null;
 let timerInterval = null;
 let solved = false;
 let movePath = [];
-let moveLog = []; // tile value moved at each step, in order
 const tileEls = {}; // value(1-8) -> DOM element
 
 function idxToRC(i) { return [Math.floor(i/SIZE), i%SIZE]; }
@@ -675,7 +629,6 @@ function resetState() {
   stepCount = 0;
   solved = false;
   movePath = [board.slice()];
-  moveLog = [];
   startTime = null;
   clearInterval(timerInterval);
   document.getElementById('timeCount').textContent = '0:00';
@@ -713,7 +666,6 @@ function tryMove(i) {
   [board[blankIdx], board[i]] = [board[i], board[blankIdx]];
   blankIdx = i;
   stepCount++;
-  moveLog.push(movedTile);
   movePath.push(board.slice());
   document.getElementById('stepCount').textContent = stepCount;
   if (!solved) {
@@ -750,9 +702,6 @@ function showWin(totalSec) {
     <span class="chip">Steps: <b>${stepCount}</b></span>
     <span class="chip">Time: <b>${formatTime(totalSec)}</b></span>
   `;
-  document.getElementById('stepsList').innerHTML = moveLog.map((tileVal, idx) =>
-    `<div class="step-row"><span class="step-num">#${idx+1}</span><span class="step-tile">Moved tile ${tileVal}</span></div>`
-  ).join('');
   card.scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
